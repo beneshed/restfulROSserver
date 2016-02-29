@@ -33,8 +33,9 @@ def list_topics():
     :return:
     """
     topics = proxy.get_topics()
-    return {'topics': [{'topic': topic, 'type': proxy.get_topic_type(topic),
-                        'data': objectutils.get_typedef(proxy.get_topic_type(topic))} for topic in topics]}
+    return {'topics': [{'topic': topic,
+                        'data': dict((k, v) for k, v in objectutils.get_typedef(proxy.get_topic_type(topic)).items() if
+                                     k == "fieldnames" or k == "fieldtypes" or k == "type")} for topic in topics]}
 
 
 @app.route('/type/{<string:name>}/', methods=['GET'])
