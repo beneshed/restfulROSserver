@@ -2,10 +2,14 @@ from flask import request
 from flask.ext.api import FlaskAPI, status
 
 from rosapi import proxy, objectutils
+from rostopic import _check_master, create_publisher, argv_publish
 
 from flask.ext.api.exceptions import APIException
 
 from fred import get_fred_command
+
+from json import JSONEncoder
+import  yaml
 
 class ROSUnavailable(APIException):
     status_code = 500
@@ -56,8 +60,10 @@ def publish():
     if op is None or ros_type is None or topic is None or msg is None:
         return status.HTTP_400_BAD_REQUEST
     else:
-        print get_fred_command(msg)
-    return 'Ok', status.HTTP_200_OK
+        _check_master()
+        pub, msg_class = create_publisher(topic, ros_type, True)
+        argv_publish(pub, msg_class, yaml.load(JSONEncoder().encode(msg)), None, True, False)
+    return {'status': 'PUBLISHED', 'body': request.data}, status.HTTP_200_OK
 
 @app.route('/type/{<string:name>}/', methods=['GET'])
 def get_type(name):
