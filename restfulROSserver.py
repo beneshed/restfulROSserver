@@ -1,14 +1,52 @@
-from flask import Flask
-from flask_restful import Api
-from resources.subscription import Subscription
-from resources.publisher import Publisher
+from flask import request
+from flask.ext.api import FlaskAPI
 
-app = Flask(__name__)
-api = Api(app)
+from rosapi import proxy, objectutils
 
-api.add_resource(Subscription, '/subscriptions')
-api.add_resource(Publisher, '/publishers')
+from flask.ext.api.exceptions import APIException
+
+
+class ROSUnavailable(APIException):
+    status_code = 500
+    detail = 'ROS unavailable, reconfigure.'
+
+
+app = FlaskAPI(__name__)
+
+
+@app.route('/', methods=['GET'])
+def root():
+    urls = {
+        'topics':
+            {
+                'url': '/topics',
+                'methods': ['GET']
+            }
+    }
+    return urls
+
+
+@app.route('/topics', methods=['GET'])
+def list_topics():
+    """
+    List all topics from ROS node
+    :return:
+    """
+    topics = proxy.get_topics()
+    return {'topics': [{'topic': topic, 'type': proxy.get_topic_type(topic),
+                        'data': objectutils.get_typedef(proxy.get_topic_type(topic))} for topic in topics]}
+
+
+@app.route('/type/{<string:name>}/', methods=['GET'])
+def get_type(name):
+    """
+
+    :param name:
+    :return:
+    """
+    print name
+    return 'ok'
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True, host='0.0.0.0', port=5000)
