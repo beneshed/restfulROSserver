@@ -34,8 +34,8 @@ def list_topics():
     """
     topics = proxy.get_topics()
     return {'topics': [{'topic': topic,
-                        'data': dict((k, v) for k, v in objectutils.get_typedef(proxy.get_topic_type(topic)).items() if
-                                     k != "examples")} for topic in topics]}
+                        'data': dict((k, v) for k, v in objectutils.get_typedef_recursive(proxy.get_topic_type(topic)).items() if
+                                     k != "examples" or k != "fieldarraylen")} for topic in topics]}
 
 
 @app.route('/type/{<string:name>}/', methods=['GET'])
