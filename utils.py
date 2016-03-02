@@ -3,6 +3,9 @@ import std_msgs.msg
 import genpy
 from rosservice import get_service_class_by_name, ROSServiceException
 import rosmsg
+from rostopic import CallbackEcho, _rostopic_echo
+import socket
+from restfulROSserver import ROSUnavailable
 
 def call_service_util(service_name, service_args, service_class=None):
     rospy.init_node('rosservice', anonymous=True, disable_signals=True)
@@ -32,3 +35,15 @@ def call_service_util(service_name, service_args, service_class=None):
     except rospy.ROSSerializationException as e:
         raise ROSServiceException("Unable to send request. One of the fields has an incorrect type:\n"+\
                                       "  %s\n\nsrv file:\n%s"%(e, rosmsg.get_srv_text(service_class._type)))
+
+
+def echo_publisher(topic, count):
+    callback_echo = CallbackEcho(topic, None, plot=False,
+                                 filter_fn=None,
+                                 echo_clear=False, echo_all_topics=False,
+                                 offset_time=False, count=count,
+                                 field_filter_fn=None, fixed_numeric_width=None)
+    try:
+        return _rostopic_echo(topic, callback_echo, bag_file=None)
+    except socket.error:
+        return ROSUnavailable

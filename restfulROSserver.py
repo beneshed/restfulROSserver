@@ -8,7 +8,7 @@ from rostopic import _check_master, create_publisher, argv_publish, ROSTopicExce
     _resource_name_package
 import rospy
 from rosservice import get_service_list, call_service
-from utils import call_service_util
+from utils import call_service_util, echo_publisher
 
 from flask.ext.api.exceptions import APIException
 
@@ -103,6 +103,15 @@ def publish():
         pub = rospy.Publisher(topic_name, msg_class, latch=True, queue_size=100)
         argv_publish(pub, msg_class, [yaml.load(JSONEncoder().encode(msg))], None, True, False)
     return {'msg': 'PLEASE WAIT FOR ROBOT TO MOVE', 'status': 'PUBLISHED', 'body': request.data}, status.HTTP_200_OK
+
+
+@app.route('/poll', methods=['POST'])
+def poll():
+    topic_name = request.args.get('topic', None)
+    if topic_name is None:
+        return status.HTTP_400_BAD_REQUEST
+    else:
+        print echo_publisher(topic_name, 1)
 
 
 @app.route('/type/{<string:name>}/', methods=['GET'])
