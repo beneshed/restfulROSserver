@@ -107,7 +107,7 @@ def publish():
 
 @app.route('/poll', methods=['POST'])
 def poll():
-    topic_name = request.args.get('topic', None)
+    topic_name = request.data.get('topic', None)
     if topic_name is None:
         return status.HTTP_400_BAD_REQUEST
     else:
