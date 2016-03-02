@@ -3,9 +3,8 @@ import std_msgs.msg
 import genpy
 from rosservice import get_service_class_by_name, ROSServiceException
 import rosmsg
-from rostopic import CallbackEcho, _rostopic_echo
+from rostopic import CallbackEcho, _rostopic_echo, ROSTopicIOException
 import socket
-from restfulROSserver import ROSUnavailable
 
 def call_service_util(service_name, service_args, service_class=None):
     rospy.init_node('rosservice', anonymous=True, disable_signals=True)
@@ -46,4 +45,4 @@ def echo_publisher(topic, count):
     try:
         return _rostopic_echo(topic, callback_echo, bag_file=None)
     except socket.error:
-        return ROSUnavailable
+        raise ROSTopicIOException("Network communication failed. Most likely failed to communicate with master.\n")
