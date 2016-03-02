@@ -2,14 +2,17 @@ from flask import request
 from flask.ext.api import FlaskAPI, status
 
 from rosapi import proxy, objectutils
-from rostopic import _check_master, create_publisher, argv_publish
+import rosgraph
+import roslib
+from rostopic import _check_master, create_publisher, argv_publish, ROSTopicException, \
+    _resource_name_package
+import rospy
 
 from flask.ext.api.exceptions import APIException
 
-from fred import get_fred_command
-
 from json import JSONEncoder
-import  yaml
+import yaml
+
 
 class ROSUnavailable(APIException):
     status_code = 500
@@ -51,19 +54,32 @@ def list_topics():
     return {'topics': [{'topic': topic,
                         'data': objectutils.get_typedef_recursive(proxy.get_topic_type(topic))} for topic in topics]}
 
+
 @app.route('/publish', methods=['POST'])
 def publish():
     op = request.data.get('op', None)
-    ros_type = request.data.get('type', None)
-    topic = request.data.get('topic', None)
+    topic_type = request.data.get('type', None)
+    topic_name = request.data.get('topic', None)
     msg = request.data.get('msg', None)
-    if op is None or ros_type is None or topic is None or msg is None:
+    if op is None or topic_type is None or topic_name is None or msg is None:
         return status.HTTP_400_BAD_REQUEST
     else:
         _check_master()
-        pub, msg_class = create_publisher(topic, ros_type, True)
+        topic_name = rosgraph.names.script_resolve_name('rostopic', topic_name)
+        try:
+            msg_class = roslib.message.get_message_class(topic_type)
+        except:
+            raise ROSTopicException("invalid topic type: %s" % topic_type)
+        if msg_class is None:
+            pkg = _resource_name_package(topic_type)
+            raise ROSTopicException(
+                "invalid message type: %s.\nIf this is a valid message type, perhaps you need to type 'rosmake %s'" % (
+                topic_type, pkg))
+        rospy.init_node('rostopic', anonymous=True, disable_rosout=True, disable_rostime=True, disable_signals=True)
+        pub = rospy.Publisher(topic_name, msg_class, latch=latch, queue_size=100)
         argv_publish(pub, msg_class, yaml.load(JSONEncoder().encode(msg)), None, True, False)
     return {'status': 'PUBLISHED', 'body': request.data}, status.HTTP_200_OK
+
 
 @app.route('/type/{<string:name>}/', methods=['GET'])
 def get_type(name):
