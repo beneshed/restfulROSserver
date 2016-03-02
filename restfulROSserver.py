@@ -75,9 +75,10 @@ def publish():
             raise ROSTopicException(
                 "invalid message type: %s.\nIf this is a valid message type, perhaps you need to type 'rosmake %s'" % (
                 topic_type, pkg))
+        #NOT being run in main thread so signals needs to be disabled
         rospy.init_node('rostopic', anonymous=True, disable_rosout=True, disable_rostime=True, disable_signals=True)
-        pub = rospy.Publisher(topic_name, msg_class, latch=latch, queue_size=100)
-        argv_publish(pub, msg_class, yaml.load(JSONEncoder().encode(msg)), None, True, False)
+        pub = rospy.Publisher(topic_name, msg_class, latch=True, queue_size=100)
+        argv_publish(pub, msg_class, [yaml.load(JSONEncoder().encode(msg))], None, True, False)
     return {'status': 'PUBLISHED', 'body': request.data}, status.HTTP_200_OK
 
 
