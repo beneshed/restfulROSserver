@@ -112,6 +112,7 @@ def poll():
         return status.HTTP_400_BAD_REQUEST
     else:
         print echo_publisher(topic_name, 1)
+        return yaml.load(str(echo_publisher(topic_name, 1)))
 
 
 @app.route('/type/{<string:name>}/', methods=['GET'])
